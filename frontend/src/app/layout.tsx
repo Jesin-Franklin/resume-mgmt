@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Automated Resume Management',
-  description: 'A balanced AI-assisted resume screening and management system.',
+  title: 'ResumeOS | Automated Screening',
+  description: 'A premium AI-assisted resume screening and management system.',
 };
 
 export default function RootLayout({
@@ -14,17 +15,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <nav style={{ padding: '1rem 2rem', borderBottom: '1px solid var(--secondary-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>ResumeOS</h2>
-          <div>
-            <a href="/" style={{ marginRight: '1rem', fontWeight: 500 }}>Home</a>
-            <a href="/applicant" style={{ marginRight: '1rem', fontWeight: 500 }}>Applicant Portal</a>
-            <a href="/staff" style={{ fontWeight: 500 }}>Staff Portal</a>
-          </div>
-        </nav>
-        <main className="container">
-          {children}
-        </main>
+        <div className="app-wrapper">
+          <nav className="main-nav">
+            <h2 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.05em' }}>
+              Resume<span style={{ color: 'var(--text-dark)' }}>OS</span>
+            </h2>
+            <div className="nav-links">
+              <Link href="/" className="nav-link">Overview</Link>
+              <Link href="/applicant" className="nav-link">Applicant Portal</Link>
+              <Link href="/staff" className="nav-link">Staff Dashboard</Link>
+            </div>
+          </nav>
+          <main className="container">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

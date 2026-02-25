@@ -61,7 +61,7 @@ export default function ApplicantPortal() {
         setMessage("");
 
         try {
-            // 1. First, create/find user (for simplicity in this mock, we post to /api/users to get an ID)
+            // 1. First, create/find user
             const userRes = await fetch(`${API_URL}/api/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -100,45 +100,61 @@ export default function ApplicantPortal() {
     };
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '600px', margin: '2rem auto' }}>
-            <h1 style={{ color: 'var(--primary-color)', marginBottom: '1.5rem' }}>Applicant Portal</h1>
-            <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
-                Select a job role and upload your resume to apply. Our AI-assisted platform will automatically process your application.
-            </p>
+        <div className="animate-fade-in" style={{ maxWidth: '640px', margin: '2rem auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                <h1 style={{ color: 'var(--primary-color)', fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Applicant Portal</h1>
+                <p style={{ color: 'var(--text-light)', fontSize: '1.1rem', marginTop: '0.5rem' }}>
+                    Select a job role and upload your resume. Our AI system will process your application instantly.
+                </p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="card">
-                <div className="form-group">
-                    <label className="form-label">Company</label>
-                    <select
-                        className="form-select"
-                        value={selectedCompanyId}
-                        onChange={(e) => {
-                            setSelectedCompanyId(e.target.value);
-                            setSelectedJobId(""); // Reset job selection
-                        }}
-                        required
-                    >
-                        <option value="">-- Select a Company --</option>
-                        {companies.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                    </select>
-                </div>
+            <form onSubmit={handleSubmit} className="card card-hoverable" style={{ padding: '2.5rem' }}>
 
-                <div className="form-group">
-                    <label className="form-label">Job Role</label>
-                    <select
-                        className="form-select"
-                        value={selectedJobId}
-                        onChange={(e) => setSelectedJobId(e.target.value)}
-                        disabled={!selectedCompanyId || jobs.length === 0}
-                        required
-                    >
-                        <option value="">-- Select a Job --</option>
-                        {jobs.map(j => (
-                            <option key={j.id} value={j.id}>{j.title}</option>
-                        ))}
-                    </select>
+                {message && (
+                    <div style={{ marginBottom: '2rem', padding: '1rem', borderRadius: '8px', backgroundColor: message.includes('success') ? 'var(--success-bg)' : 'var(--warning-bg)', color: message.includes('success') ? 'var(--success-text)' : 'var(--warning-text)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {message.includes('success') ? (
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                        ) : (
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                        )}
+                        <span style={{ fontWeight: 500 }}>{message}</span>
+                    </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Company</label>
+                        <select
+                            className="form-select"
+                            value={selectedCompanyId}
+                            onChange={(e) => {
+                                setSelectedCompanyId(e.target.value);
+                                setSelectedJobId(""); // Reset job selection
+                            }}
+                            required
+                        >
+                            <option value="">-- Choose Company --</option>
+                            {companies.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Job Role</label>
+                        <select
+                            className="form-select"
+                            value={selectedJobId}
+                            onChange={(e) => setSelectedJobId(e.target.value)}
+                            disabled={!selectedCompanyId || jobs.length === 0}
+                            required
+                        >
+                            <option value="">-- Choose Role --</option>
+                            {jobs.map(j => (
+                                <option key={j.id} value={j.id}>{j.title}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 <div className="form-group">
@@ -165,27 +181,43 @@ export default function ApplicantPortal() {
                     />
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '2rem' }}>
                     <label className="form-label">Upload Resume (PDF/DOC)</label>
-                    <input
-                        type="file"
-                        className="form-input"
-                        accept=".pdf,.doc,.docx"
-                        onChange={(e) => setResumeFile(e.target.files ? e.target.files[0] : null)}
-                        required
-                    />
+                    <div style={{ border: '2px dashed var(--border-color)', borderRadius: '8px', padding: '1.5rem', textAlign: 'center', backgroundColor: 'var(--secondary-color)', transition: 'border-color 0.2s', cursor: 'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary-color)'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}>
+                        <input
+                            type="file"
+                            className="form-input"
+                            style={{ opacity: 0, position: 'absolute', width: '1px', height: '1px' }}
+                            id="resume-upload"
+                            accept=".pdf,.doc,.docx"
+                            onChange={(e) => setResumeFile(e.target.files ? e.target.files[0] : null)}
+                            required
+                        />
+                        <label htmlFor="resume-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <svg width="32" height="32" fill="none" stroke="var(--primary-color)" viewBox="0 0 24 24" style={{ marginBottom: '0.5rem' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                            <span style={{ fontWeight: 500, color: 'var(--primary-color)' }}>{resumeFile ? resumeFile.name : "Click to select a file"}</span>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '0.25rem' }}>or drag and drop</span>
+                        </label>
+                    </div>
                 </div>
 
-                <button type="submit" className="btn" style={{ width: '100%' }} disabled={loading}>
-                    {loading ? "Submitting..." : "Submit Application"}
+                <button type="submit" className="btn" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }} disabled={loading}>
+                    {loading ? (
+                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                            <svg className="animate-spin" width="20" height="20" fill="none" viewBox="0 0 24 24" style={{ animation: 'spin 1s linear infinite' }}>
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Submitting Application...
+                        </span>
+                    ) : "Submit Application"}
                 </button>
-
-                {message && (
-                    <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: 'var(--radius)', backgroundColor: message.includes('success') ? '#d1fae5' : '#fee2e2', color: message.includes('success') ? '#065f46' : '#991b1b' }}>
-                        {message}
-                    </div>
-                )}
             </form>
+            <style jsx>{`
+                @keyframes spin { to { transform: rotate(360deg); } }
+            `}</style>
         </div>
     );
 }

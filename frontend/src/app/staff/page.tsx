@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
+// Define TS Interfaces
 interface Company { id: number; name: string; }
 interface JobRole { id: number; title: string; requiredSkills: string; companyId: number; }
 interface Application {
@@ -18,220 +19,255 @@ export default function StaffPortal() {
 
     const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
     const [selectedJobId, setSelectedJobId] = useState<string>("");
-    const [selectedApp, setSelectedApp] = useState<Application | null>(null);
 
-    // New Company Form State
-    const [newCompanyName, setNewCompanyName] = useState("");
-    const [newCompanyDesc, setNewCompanyDesc] = useState("");
+    // Review State
+    const [reviewAppId, setReviewAppId] = useState<number | null>(null);
+    const [humanScore, setHumanScore] = useState<string>("");
+    const [humanFeedback, setHumanFeedback] = useState<string>("");
+    const [submitting, setSubmitting] = useState(false);
 
-    // New Job Form State
-    const [newJobTitle, setNewJobTitle] = useState("");
-    const [newJobSkills, setNewJobSkills] = useState("");
-
-    // Feedback Form State
-    const [humanScore, setHumanScore] = useState<number>(0);
-    const [humanFeedback, setHumanFeedback] = useState("");
-
-    const fetchCompanies = async () => {
-        const res = await fetch(`${API_URL}/api/companies`);
-        setCompanies(await res.json());
-    };
-
-    const fetchJobs = async (compId: string) => {
-        if (!compId) return setJobs([]);
-        const res = await fetch(`${API_URL}/api/jobs/company/${compId}`);
-        setJobs(await res.json());
-    };
-
-    const fetchApplications = async (jobId: string) => {
-        if (!jobId) return setApplications([]);
-        const res = await fetch(`${API_URL}/api/applications/job/${jobId}`);
-        setApplications(await res.json());
-    };
-
-    useEffect(() => { fetchCompanies(); }, []);
-    useEffect(() => { fetchJobs(selectedCompanyId); }, [selectedCompanyId]);
     useEffect(() => {
-        fetchApplications(selectedJobId);
-        setSelectedApp(null);
+        fetch(`${API_URL}/api/companies`)
+            .then(res => res.json())
+            .then(data => setCompanies(data))
+            .catch(err => console.error(err));
+    }, []);
+
+    useEffect(() => {
+        if (selectedCompanyId) {
+            fetch(`${API_URL}/api/jobs/company/${selectedCompanyId}`)
+                .then(res => res.json())
+                .then(data => setJobs(data))
+                .catch(err => console.error(err));
+        } else {
+            setJobs([]);
+        }
+    }, [selectedCompanyId]);
+
+    useEffect(() => {
+        if (selectedJobId) {
+            fetch(`${API_URL}/api/applications/job/${selectedJobId}`)
+                .then(res => res.json())
+                .then(data => setApplications(data))
+                .catch(err => console.error(err));
+        } else {
+            setApplications([]);
+        }
     }, [selectedJobId]);
 
-    const handleCreateJob = async (e: React.FormEvent) => {
+    const handleReviewSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedCompanyId || !newJobTitle) return;
+        if (!reviewAppId) return;
 
+        setSubmitting(true);
         try {
-            const res = await fetch(`${API_URL}/api/jobs`, {
-                method: 'POST',
+            await fetch(`${API_URL}/api/applications/${reviewAppId}/review`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title: newJobTitle,
-                    requiredSkills: newJobSkills,
-                    companyId: parseInt(selectedCompanyId)
+                    humanScore: parseInt(humanScore),
+                    humanFeedback
                 })
             });
-            if (res.ok) {
-                alert("Job successfully created!");
-                setNewJobTitle("");
-                setNewJobSkills("");
-                fetchJobs(selectedCompanyId); // Refresh
-            } else {
-                alert("Failed to create job.");
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Error creating job.");
+
+            // Refresh applications array
+            const res = await fetch(`${API_URL}/api/applications/job/${selectedJobId}`);
+            const data = await res.json();
+            setApplications(data);
+
+            setReviewAppId(null);
+            setHumanScore("");
+            setHumanFeedback("");
+        } catch (err) {
+            console.error("Failed to submit review", err);
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    const handleCreateCompany = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newCompanyName) return;
-
-        try {
-            const res = await fetch(`${API_URL}/api/companies`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: newCompanyName,
-                    description: newCompanyDesc
-                })
-            });
-            if (res.ok) {
-                alert("Company successfully created!");
-                setNewCompanyName("");
-                setNewCompanyDesc("");
-                fetchCompanies(); // Refresh
-            } else {
-                alert("Failed to create company.");
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Error creating company.");
-        }
+    const getScoreColor = (score: number) => {
+        if (score >= 80) return 'var(--success-text)';
+        if (score >= 50) return 'var(--warning-text)';
+        return '#dc2626';
     };
 
-    const submitFeedback = async () => {
-        if (!selectedApp) return;
-        await fetch(`${API_URL}/api/applications/${selectedApp.id}/feedback`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ humanScore, humanFeedback })
-        });
-        alert("Feedback saved!");
-        fetchApplications(selectedJobId);
-        setSelectedApp(null);
+    const getScoreBg = (score: number) => {
+        if (score >= 80) return 'var(--success-bg)';
+        if (score >= 50) return 'var(--warning-bg)';
+        return '#fee2e2';
     };
 
     return (
-        <div className="animate-fade-in" style={{ padding: '1rem' }}>
-            <h1 style={{ color: 'var(--primary-color)' }}>Staff Dashboard</h1>
-            <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>Manage job postings, review AI-shortlisted candidates, and provide human oversight.</p>
+        <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', height: 'calc(100vh - 120px)' }}>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-                {/* Left Column: Management */}
-                <div>
-                    <div className="card" style={{ marginBottom: '1.5rem' }}>
-                        <h3>1. Select Company</h3>
-                        <select className="form-select" value={selectedCompanyId} onChange={e => setSelectedCompanyId(e.target.value)}>
-                            <option value="">-- Choose Company --</option>
-                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
-                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--secondary-color)' }}>
-                            <h4 style={{ marginBottom: '0.5rem' }}>Or Create New Company</h4>
-                            <form onSubmit={handleCreateCompany}>
-                                <input className="form-input" style={{ marginBottom: '0.5rem' }} placeholder="Company Name" value={newCompanyName} onChange={e => setNewCompanyName(e.target.value)} required />
-                                <textarea className="form-input" style={{ marginBottom: '0.5rem', minHeight: '60px' }} placeholder="Company Description" value={newCompanyDesc} onChange={e => setNewCompanyDesc(e.target.value)} />
-                                <button className="btn" type="submit" style={{ width: '100%' }}>Create Company</button>
-                            </form>
-                        </div>
+            {/* Left Sidebar - Filters */}
+            <div className="card" style={{ alignSelf: 'start' }}>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>Dashboard Filters</h2>
+
+                <div className="form-group">
+                    <label className="form-label">Select Company</label>
+                    <select
+                        className="form-select"
+                        value={selectedCompanyId}
+                        onChange={(e) => {
+                            setSelectedCompanyId(e.target.value);
+                            setSelectedJobId("");
+                        }}
+                    >
+                        <option value="">-- All Companies --</option>
+                        {companies.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Select Job Role</label>
+                    <select
+                        className="form-select"
+                        value={selectedJobId}
+                        onChange={(e) => setSelectedJobId(e.target.value)}
+                        disabled={!selectedCompanyId || jobs.length === 0}
+                    >
+                        <option value="">-- Select Role --</option>
+                        {jobs.map(j => (
+                            <option key={j.id} value={j.id}>{j.title}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {selectedJobId && (
+                    <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: 'var(--secondary-color)', borderRadius: '8px' }}>
+                        <p style={{ margin: 0, fontWeight: 500 }}>
+                            Showing {applications.length} Applicant{applications.length !== 1 ? 's' : ''}
+                        </p>
                     </div>
+                )}
+            </div>
 
-                    {selectedCompanyId && (
-                        <div className="card" style={{ marginBottom: '1.5rem' }}>
-                            <h3>2. Create New Job Post</h3>
-                            <form onSubmit={handleCreateJob}>
-                                <input className="form-input" style={{ marginBottom: '0.5rem' }} placeholder="Job Title (e.g. Frontend Engineer)" value={newJobTitle} onChange={e => setNewJobTitle(e.target.value)} required />
-                                <textarea className="form-input" style={{ marginBottom: '0.5rem', minHeight: '80px' }} placeholder="Required Skills (e.g. React, TypeScript)" value={newJobSkills} onChange={e => setNewJobSkills(e.target.value)} required />
-                                <button className="btn" type="submit" style={{ width: '100%' }}>Create Job</button>
-                            </form>
+            {/* Right Side - Applicants List */}
+            <div style={{ height: '100%', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                {!selectedJobId ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-light)', border: '2px dashed var(--border-color)', borderRadius: '12px', padding: '4rem 0' }}>
+                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginBottom: '1rem' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 500 }}>No Role Selected</h3>
+                        <p>Please select a company and job role from the sidebar to view applicants.</p>
+                    </div>
+                ) : applications.length === 0 ? (
+                    <div style={{ textAlign: 'center', marginTop: '4rem', color: 'var(--text-light)' }}>
+                        No applications found for this role yet.
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', margin: 0 }}>Candidate Review Pipeline</h2>
                         </div>
-                    )}
-
-                    {jobs.length > 0 && (
-                        <div className="card">
-                            <h3>3. Select Job to Review</h3>
-                            <select className="form-select" value={selectedJobId} onChange={e => setSelectedJobId(e.target.value)}>
-                                <option value="">-- Choose Job --</option>
-                                {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-                            </select>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Column: Candidates */}
-                <div className="card">
-                    <h3>Candidates</h3>
-                    {!selectedJobId ? (
-                        <p style={{ color: 'var(--text-light)' }}>Select a job to view candidates.</p>
-                    ) : applications.length === 0 ? (
-                        <p style={{ color: 'var(--text-light)' }}>No applications for this job yet.</p>
-                    ) : (
-                        <div>
-                            {applications.map(app => (
-                                <div
-                                    key={app.id}
-                                    style={{
-                                        padding: '1rem', border: '1px solid var(--secondary-color)',
-                                        borderRadius: 'var(--radius)', marginBottom: '1rem',
-                                        cursor: 'pointer', backgroundColor: selectedApp?.id === app.id ? 'var(--secondary-color)' : 'transparent'
-                                    }}
-                                    onClick={() => {
-                                        setSelectedApp(app);
-                                        setHumanScore(app.humanScore || 0);
-                                        setHumanFeedback(app.humanFeedback || "");
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h4 style={{ margin: 0 }}>{app.applicantName}</h4>
-                                        <span style={{
-                                            backgroundColor: (app.aiScore || 0) > 75 ? '#d1fae5' : '#fef3c7',
-                                            color: (app.aiScore || 0) > 75 ? '#065f46' : '#92400e',
-                                            padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.875rem', fontWeight: 'bold'
-                                        }}>
-                                            AI Score: {app.aiScore || 'N/A'}
-                                        </span>
-                                    </div>
-                                    <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', marginTop: '0.5rem' }}>{app.applicantEmail}</p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Detailed Review View */}
-                    {selectedApp && (
-                        <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--secondary-color)', borderRadius: 'var(--radius)' }}>
-                            <h3 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Candidate Reviewer</h3>
-                            <p><strong>Name:</strong> {selectedApp.applicantName}</p>
-                            <p><strong>AI Extracted Skills:</strong> <br />{selectedApp.extractedSkills}</p>
-
-                            <div style={{ marginTop: '1.5rem' }}>
-                                <h4 style={{ marginBottom: '0.5rem' }}>Human-in-the-Loop Feedback</h4>
-                                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <label className="form-label">Adjust Score (0-100)</label>
-                                        <input className="form-input" type="number" min="0" max="100" value={humanScore} onChange={e => setHumanScore(Number(e.target.value))} />
-                                    </div>
-                                </div>
+                        {applications.map(app => (
+                            <div key={app.id} className="card card-hoverable" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '2rem', padding: '1.5rem 2rem' }}>
                                 <div>
-                                    <label className="form-label">Qualitative Feedback</label>
-                                    <textarea className="form-input" style={{ minHeight: '80px', marginBottom: '1rem' }} placeholder="Note communication skills from cover letter, etc." value={humanFeedback} onChange={e => setHumanFeedback(e.target.value)} />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--primary-color)' }}>{app.applicantName}</h3>
+                                            <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', marginTop: '0.25rem' }}>{app.applicantEmail} • Applied on {new Date(app.appDate).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-light)', marginBottom: '0.5rem' }}>AI Extracted Skills</h4>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                            {app.extractedSkills ? app.extractedSkills.split(',').map((skill, idx) => (
+                                                <span key={idx} style={{ backgroundColor: 'var(--secondary-color)', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem', color: 'var(--text-dark)', border: '1px solid var(--border-color)' }}>
+                                                    {skill.trim()}
+                                                </span>
+                                            )) : <span style={{ color: 'var(--text-light)' }}>Pending extraction...</span>}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <div style={{ padding: '0.5rem 1rem', borderRadius: '8px', backgroundColor: getScoreBg(app.aiScore), color: getScoreColor(app.aiScore), border: `1px solid ${getScoreColor(app.aiScore)}30` }}>
+                                            <span style={{ fontSize: '0.8rem', display: 'block', textTransform: 'uppercase', fontWeight: 600, opacity: 0.8 }}>AI Match Rate</span>
+                                            <strong style={{ fontSize: '1.5rem' }}>{app.aiScore}%</strong>
+                                        </div>
+                                        {app.humanScore > 0 && (
+                                            <div style={{ padding: '0.5rem 1rem', borderRadius: '8px', backgroundColor: 'var(--secondary-color)', border: '1px solid var(--border-color)' }}>
+                                                <span style={{ fontSize: '0.8rem', display: 'block', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-light)' }}>Human Score</span>
+                                                <strong style={{ fontSize: '1.5rem' }}>{app.humanScore}%</strong>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <button className="btn" onClick={submitFeedback}>Save Feedback</button>
+
+                                <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '2rem', display: 'flex', flexDirection: 'column' }}>
+                                    {reviewAppId === app.id ? (
+                                        <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                            <h4 style={{ margin: '0 0 1rem 0' }}>Provide Human Review</h4>
+
+                                            <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Rating (0-100)</label>
+                                                <input
+                                                    type="number"
+                                                    className="form-input"
+                                                    min="0" max="100"
+                                                    required
+                                                    value={humanScore}
+                                                    onChange={e => setHumanScore(e.target.value)}
+                                                    style={{ padding: '0.5rem' }}
+                                                />
+                                            </div>
+
+                                            <div className="form-group" style={{ flex: 1, marginBottom: '1rem' }}>
+                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Feedback Notes</label>
+                                                <textarea
+                                                    className="form-textarea"
+                                                    required
+                                                    value={humanFeedback}
+                                                    onChange={e => setHumanFeedback(e.target.value)}
+                                                    style={{ height: '80px', resize: 'none' }}
+                                                />
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <button type="submit" className="btn" style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }} disabled={submitting}>
+                                                    {submitting ? 'Saving...' : 'Save'}
+                                                </button>
+                                                <button type="button" className="btn" style={{ backgroundColor: 'transparent', color: 'var(--text-light)', border: '1px solid var(--border-color)', padding: '0.5rem', fontSize: '0.9rem' }} onClick={() => setReviewAppId(null)}>
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                            {app.humanFeedback ? (
+                                                <div style={{ flex: 1 }}>
+                                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: 'var(--text-dark)' }}>Staff Feedback</h4>
+                                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-light)', backgroundColor: 'var(--secondary-color)', padding: '0.75rem', borderRadius: '6px', fontStyle: 'italic' }}>
+                                                        &quot;{app.humanFeedback}&quot;
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyItems: 'center', color: 'var(--text-light)', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                                                    Pending human review
+                                                </div>
+                                            )}
+
+                                            <button
+                                                className="btn"
+                                                style={{ width: '100%', marginTop: 'auto', backgroundColor: app.humanScore > 0 ? 'var(--secondary-color)' : 'var(--primary-color)', color: app.humanScore > 0 ? 'var(--text-dark)' : 'white', border: app.humanScore > 0 ? '1px solid var(--border-color)' : 'none' }}
+                                                onClick={() => {
+                                                    setReviewAppId(app.id);
+                                                    setHumanScore(app.humanScore ? app.humanScore.toString() : "");
+                                                    setHumanFeedback(app.humanFeedback || "");
+                                                }}
+                                            >
+                                                {app.humanScore > 0 ? "Edit Review" : "Start Review"}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
