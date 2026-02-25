@@ -26,6 +26,19 @@ export default function StaffPortal() {
     const [humanFeedback, setHumanFeedback] = useState<string>("");
     const [submitting, setSubmitting] = useState(false);
 
+    // Create Company State
+    const [showCompanyForm, setShowCompanyForm] = useState(false);
+    const [newCompanyName, setNewCompanyName] = useState("");
+    const [newCompanyDesc, setNewCompanyDesc] = useState("");
+    const [creatingCompany, setCreatingCompany] = useState(false);
+
+    // Create Job State
+    const [showJobForm, setShowJobForm] = useState(false);
+    const [newJobTitle, setNewJobTitle] = useState("");
+    const [newJobDesc, setNewJobDesc] = useState("");
+    const [newJobSkills, setNewJobSkills] = useState("");
+    const [creatingJob, setCreatingJob] = useState(false);
+
     useEffect(() => {
         fetch(`${API_URL}/api/companies`)
             .then(res => res.json())
@@ -97,48 +110,137 @@ export default function StaffPortal() {
         return '#fee2e2';
     };
 
+    const handleCreateCompany = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newCompanyName) return;
+        setCreatingCompany(true);
+        try {
+            const res = await fetch(`${API_URL}/api/companies`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newCompanyName, description: newCompanyDesc })
+            });
+            const newCompany = await res.json();
+            setCompanies([...companies, newCompany]);
+            setSelectedCompanyId(newCompany.id.toString());
+            setShowCompanyForm(false);
+            setNewCompanyName("");
+            setNewCompanyDesc("");
+            setSelectedJobId("");
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setCreatingCompany(false);
+        }
+    };
+
+    const handleCreateJob = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newJobTitle || !selectedCompanyId) return;
+        setCreatingJob(true);
+        try {
+            const res = await fetch(`${API_URL}/api/jobs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: newJobTitle, description: newJobDesc, requiredSkills: newJobSkills, companyId: parseInt(selectedCompanyId) })
+            });
+            const newJob = await res.json();
+            setJobs([...jobs, newJob]);
+            setSelectedJobId(newJob.id.toString());
+            setShowJobForm(false);
+            setNewJobTitle("");
+            setNewJobDesc("");
+            setNewJobSkills("");
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setCreatingJob(false);
+        }
+    };
+
     return (
         <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', height: 'calc(100vh - 120px)' }}>
 
             {/* Left Sidebar - Filters */}
-            <div className="card" style={{ alignSelf: 'start' }}>
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>Dashboard Filters</h2>
+            <div className="card" style={{ alignSelf: 'start', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', margin: 0 }}>Dashboard Filters</h2>
 
-                <div className="form-group">
-                    <label className="form-label">Select Company</label>
-                    <select
-                        className="form-select"
-                        value={selectedCompanyId}
-                        onChange={(e) => {
-                            setSelectedCompanyId(e.target.value);
-                            setSelectedJobId("");
-                        }}
-                    >
-                        <option value="">-- All Companies --</option>
-                        {companies.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                    </select>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <label className="form-label" style={{ margin: 0 }}>Select Company</label>
+                        <button type="button" onClick={() => setShowCompanyForm(!showCompanyForm)} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>
+                            {showCompanyForm ? 'Cancel' : '+ New'}
+                        </button>
+                    </div>
+                    {showCompanyForm ? (
+                        <form onSubmit={handleCreateCompany} style={{ backgroundColor: 'var(--secondary-color)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                            <input className="form-input" style={{ marginBottom: '0.5rem', padding: '0.5rem', fontSize: '0.9rem' }} placeholder="Company Name" value={newCompanyName} onChange={e => setNewCompanyName(e.target.value)} required />
+                            <input className="form-input" style={{ marginBottom: '0.5rem', padding: '0.5rem', fontSize: '0.9rem' }} placeholder="Description (Optional)" value={newCompanyDesc} onChange={e => setNewCompanyDesc(e.target.value)} />
+                            <button type="submit" className="btn" style={{ width: '100%', padding: '0.5rem', fontSize: '0.9rem' }} disabled={creatingCompany}>
+                                {creatingCompany ? 'Creating...' : 'Create Company'}
+                            </button>
+                        </form>
+                    ) : (
+                        <select
+                            className="form-select"
+                            value={selectedCompanyId}
+                            onChange={(e) => {
+                                setSelectedCompanyId(e.target.value);
+                                setSelectedJobId("");
+                                setShowJobForm(false);
+                            }}
+                        >
+                            <option value="">-- All Companies --</option>
+                            {companies.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
 
-                <div className="form-group">
-                    <label className="form-label">Select Job Role</label>
-                    <select
-                        className="form-select"
-                        value={selectedJobId}
-                        onChange={(e) => setSelectedJobId(e.target.value)}
-                        disabled={!selectedCompanyId || jobs.length === 0}
-                    >
-                        <option value="">-- Select Role --</option>
-                        {jobs.map(j => (
-                            <option key={j.id} value={j.id}>{j.title}</option>
-                        ))}
-                    </select>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <label className="form-label" style={{ margin: 0 }}>Select Job Role</label>
+                        {selectedCompanyId && (
+                            <button type="button" onClick={() => setShowJobForm(!showJobForm)} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>
+                                {showJobForm ? 'Cancel' : '+ New Job'}
+                            </button>
+                        )}
+                    </div>
+                    {showJobForm ? (
+                        <form onSubmit={handleCreateJob} style={{ backgroundColor: 'var(--secondary-color)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                            <input className="form-input" style={{ marginBottom: '0.5rem', padding: '0.5rem', fontSize: '0.9rem' }} placeholder="Job Title" value={newJobTitle} onChange={e => setNewJobTitle(e.target.value)} required />
+                            <textarea className="form-textarea" style={{ marginBottom: '0.5rem', padding: '0.5rem', fontSize: '0.9rem', minHeight: '60px' }} placeholder="Required Skills (comma separated)" value={newJobSkills} onChange={e => setNewJobSkills(e.target.value)} required />
+                            <button type="submit" className="btn" style={{ width: '100%', padding: '0.5rem', fontSize: '0.9rem' }} disabled={creatingJob}>
+                                {creatingJob ? 'Posting...' : 'Post Job'}
+                            </button>
+                        </form>
+                    ) : (
+                        <select
+                            className="form-select"
+                            value={selectedJobId}
+                            onChange={(e) => setSelectedJobId(e.target.value)}
+                            disabled={!selectedCompanyId || jobs.length === 0}
+                        >
+                            <option value="">-- Select Role --</option>
+                            {jobs.map(j => (
+                                <option key={j.id} value={j.id}>{j.title}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
 
                 {selectedJobId && (
-                    <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: 'var(--secondary-color)', borderRadius: '8px' }}>
-                        <p style={{ margin: 0, fontWeight: 500 }}>
+                    <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: 'var(--secondary-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                        <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-dark)' }}>Required Skills</h4>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                            {jobs.find(j => j.id.toString() === selectedJobId)?.requiredSkills?.split(',').map((skill, idx) => (
+                                <span key={idx} style={{ backgroundColor: 'var(--bg-color)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', border: '1px solid var(--border-color)', color: 'var(--text-dark)' }}>
+                                    {skill.trim()}
+                                </span>
+                            )) || <span style={{ color: 'var(--text-light)', fontSize: '0.85rem' }}>Not specified</span>}
+                        </div>
+                        <p style={{ margin: 0, fontWeight: 500, borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                             Showing {applications.length} Applicant{applications.length !== 1 ? 's' : ''}
                         </p>
                     </div>

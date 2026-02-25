@@ -1,13 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary-color: #6366f1; /* Indigo */
-  --primary-hover: #4f46e5;
+  --primary-color: #10b981;
+  /* Emerald Green */
+  --primary-hover: #059669;
   --secondary-color: #f8fafc;
   --text-dark: #0f172a;
   --text-light: #64748b;
   --bg-color: #ffffff;
-  --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+  --bg-gradient: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
   --nav-bg: rgba(255, 255, 255, 0.8);
   --border-color: #e2e8f0;
   --radius: 12px;
@@ -18,23 +19,30 @@
   --warning-text: #854d0e;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary-color: #818cf8;
-    --primary-hover: #6366f1;
-    --secondary-color: #1e293b;
-    --text-dark: #f8fafc;
-    --text-light: #94a3b8;
-    --bg-color: #0f172a;
-    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #171e2e 100%);
-    --nav-bg: rgba(15, 23, 42, 0.8);
-    --border-color: #334155;
-    --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
-    --success-bg: rgba(22, 101, 52, 0.3);
-    --success-text: #4ade80;
-    --warning-bg: rgba(133, 77, 14, 0.3);
-    --warning-text: #fde047;
-  }
+[data-theme='dark'] {
+  --primary-color: #10b981;
+  /* Emerald 500 */
+  --primary-hover: #059669;
+  /* Emerald 600 */
+  --secondary-color: #0d9488;
+  /* Teal 600 */
+  --text-dark: #f8fafc;
+  /* Slate 50 */
+  --text-light: #94a3b8;
+  /* Slate 400 */
+  --bg-color: #064e3b;
+  /* Emerald 900 */
+  --bg-gradient: linear-gradient(135deg, #022c22 0%, #0f172a 100%);
+  /* Deep Forest to Dark Slate */
+  --nav-bg: rgba(2, 44, 34, 0.85);
+  /* Deep Forest transparent */
+  --border-color: #115e59;
+  /* Teal 800 */
+  --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --success-text: #34d399;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-text: #fbbf24;
 }
 
 * {
@@ -58,7 +66,12 @@ a {
   transition: color 0.2s ease;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin-bottom: 0.5rem;
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -173,7 +186,9 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.95rem;
 }
 
-.form-input, .form-select, .form-textarea {
+.form-input,
+.form-select,
+.form-textarea {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-color);
@@ -185,7 +200,9 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.2s;
 }
 
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
@@ -212,8 +229,15 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Animations */
 @keyframes fadeInSlideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
@@ -225,13 +249,16 @@ h1, h2, h3, h4, h5, h6 {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--bg-color); 
+  background: var(--bg-color);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color); 
+  background: var(--border-color);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-light); 
+  background: var(--text-light);
 }

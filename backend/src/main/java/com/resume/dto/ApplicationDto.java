@@ -15,6 +15,7 @@ public class ApplicationDto {
     private LocalDateTime appDate;
     private Double aiScore;
     private String extractedSkills;
+    private String missingSkills;
     private Double humanScore;
     private String humanFeedback;
 }

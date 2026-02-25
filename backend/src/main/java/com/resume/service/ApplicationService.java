@@ -94,6 +94,9 @@ public class ApplicationService {
         String skills = job.getRequiredSkills() != null ? job.getRequiredSkills() : "Java, React";
         score.setExtractedSkills("Mocked matched skills based on job requirements: " + skills);
 
+        // Mock missing skills
+        score.setMissingSkills("System Design, Docker, Cloud Platforms");
+
         return score;
     }
 
@@ -111,6 +114,7 @@ public class ApplicationService {
         if (app.getScreeningScore() != null) {
             dto.setAiScore(app.getScreeningScore().getAiScore());
             dto.setExtractedSkills(app.getScreeningScore().getExtractedSkills());
+            dto.setMissingSkills(app.getScreeningScore().getMissingSkills());
             dto.setHumanScore(app.getScreeningScore().getHumanScore());
             dto.setHumanFeedback(app.getScreeningScore().getHumanFeedback());
         }

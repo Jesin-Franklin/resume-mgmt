@@ -25,6 +25,9 @@ public class ScreeningScore {
     @Column(columnDefinition = "TEXT")
     private String extractedSkills;
 
+    @Column(columnDefinition = "TEXT")
+    private String missingSkills;
+
     // Human-in-the-loop review
     private Double humanScore;
 

@@ -11,8 +11,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class JobRoleService {
 
     private final JobRoleRepository jobRoleRepository;
@@ -26,6 +29,7 @@ public class JobRoleService {
         return jobRoleRepository.findAll().stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
+    @Transactional
     public JobRoleDto createJob(JobRoleDto dto) {
         Company company = companyRepository.findById(dto.getCompanyId())
                 .orElseThrow(() -> new RuntimeException("Company not found"));
